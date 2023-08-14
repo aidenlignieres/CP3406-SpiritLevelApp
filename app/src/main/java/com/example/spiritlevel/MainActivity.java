@@ -11,20 +11,24 @@ import android.os.Bundle;
 import android.util.Log;
 
 import java.util.List;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
 
     private SensorManager sensorManager;
-
-    private Sensor mLight;
+    private Sensor gravitySensor;
+    private SpiritLevelView spiritLevelView;
 
     @Override
     public final void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        spiritLevelView = findViewById(R.id.spiritLevelView);
+        gravitySensor = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
+
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        mLight = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
+
 
         List<Sensor> deviceSensors = sensorManager.getSensorList(Sensor.TYPE_ALL);
 
@@ -35,21 +39,32 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     @Override
     public final void onAccuracyChanged(Sensor sensor, int accuracy) {
-        // Do something here if sensor accuracy changes.
+        String message = String.format(Locale.getDefault(),
+                "%s: %d", sensor.getName(), accuracy);
+        Log.i("MainActivity", message);
     }
 
     @Override
     public final void onSensorChanged(SensorEvent event) {
-        // The light sensor returns a single value.
-        // Many sensors return 3 values, one for each axis.
-        float lux = event.values[0];
-        // Do something with this sensor value.
+        final String[] axes = new String[]{"x", "y", "z"};
+        final String format = "%s %.2f ";
+
+        StringBuilder message = new StringBuilder();
+        for (int i = 0; i < axes.length; ++i) {
+            message.append(String.format(Locale.getDefault(),
+                    format, axes[i], event.values[i]));
+        }
+        Log.i("MainActivity", message.toString());
+
+        float x = event.values[0];
+        float y = event.values[1];
+        spiritLevelView.setBubble(x, y);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        sensorManager.registerListener(this, mLight, SensorManager.SENSOR_DELAY_NORMAL);
+        sensorManager.registerListener(this, gravitySensor, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     @Override
